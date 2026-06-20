@@ -6,8 +6,10 @@ import (
 	"os"
 	"time"
 
+	bridgehandlers "github.com/Dellrall/ImagineHack26-EggFolks/backend-ai/internal/handlers"
+	bridgemiddleware "github.com/Dellrall/ImagineHack26-EggFolks/backend-ai/internal/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 )
@@ -19,13 +21,8 @@ func main() {
 	}
 
 	r := chi.NewRouter()
-
-	// Standard middleware for observability and panic recovery
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(15 * time.Second))
+	bridgemiddleware.Apply(r)
+	r.Use(chiMiddleware.Timeout(15 * time.Second))
 
 	// CORS Configuration for TanStack frontend
 	r.Use(cors.Handler(cors.Options{
@@ -43,9 +40,7 @@ func main() {
 			w.Write([]byte(`{"status": "AI Bridge is operational"}`))
 		})
 
-		// TODO: Mount handlers from /internal/handlers here
-		// r.Post("/routes/recommend", handlers.RecommendRoute)
-		// r.Post("/routes/feedback", handlers.SubmitFeedback)
+		bridgehandlers.RegisterRoutes(r)
 	})
 
 	port := os.Getenv("PORT")
