@@ -1,2 +1,3 @@
 #agents folder
 .env/
+backend/.env
