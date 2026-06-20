@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { BarChart3, FileText, Gift, Home, Leaf, Map, Ticket, User, Zap } from 'lucide-react';
+import { BarChart3, FileText, Gift, Home, Map, Ticket, User, Zap } from 'lucide-react';
+import cortisonLogo from '../../../frontend/Cortison Logo.jpg';
 
 const employeeNav = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -31,8 +32,8 @@ export default function Sidebar({ variant = 'employee', open, onClose }) {
         }`}
       >
         <div className="flex items-center gap-3 px-2">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-secondary p-3 text-white">
-            <Leaf size={24} />
+          <div className="h-14 w-14 overflow-hidden rounded-3xl bg-white p-1 shadow-sm">
+            <img src={cortisonLogo} alt="Cortison logo" className="h-full w-full object-contain" />
           </div>
           <div>
             <p className="text-lg font-black text-slate-950 dark:text-white">{title}</p>

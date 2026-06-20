@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import cortisonLogo from '../../../frontend/Cortison Logo.jpg';
 
 // Simulated Database Query
 const verifyEmailInDatabase = async (email, password) => {
@@ -56,10 +57,12 @@ export default function Login() {
         
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+          <div className="mx-auto mb-4 rounded-full bg-emerald-100 p-4 flex items-center justify-center shadow-sm" style={{ width: '88px', height: '88px' }}>
+            <img
+              src={cortisonLogo}
+              alt="Cortison logo"
+              className="h-full w-full object-contain rounded-full"
+            />
           </div>
           <h2 className="mt-2 text-3xl font-extrabold text-emerald-950 tracking-tight">
             Welcome back

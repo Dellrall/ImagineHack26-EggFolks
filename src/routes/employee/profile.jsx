@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { getCurrentUser, updateCurrentUser } from '../../lib/auth';
 import { usePoints } from '../../hooks/usePoints';
 import LoadingState from '../../components/shared/LoadingState';
 import ErrorState from '../../components/shared/ErrorState';
 
 export default function EmployeeProfileRoute() {
+  const navigate = useNavigate();
   const employee = getCurrentUser();
   const points = usePoints();
 
@@ -175,12 +177,24 @@ export default function EmployeeProfileRoute() {
               </div>
             ))}
           </div>
-          <div className="px-6 pb-6">
+          <div className="px-6 pb-6 space-y-3">
             <button
               onClick={() => setIsEditing(true)}
               className="rounded-xl bg-secondary px-5 py-3 text-sm font-bold text-white transition hover:bg-secondary/90 active:scale-95 shadow"
             >
               Edit Profile
+            </button>
+            <button
+              onClick={() => {
+                const shouldLogout = window.confirm('Are you sure you want to logout?');
+                if (!shouldLogout) return;
+                localStorage.removeItem('user');
+                localStorage.removeItem('eco_current_user');
+                navigate({ to: '/login' });
+              }}
+              className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 active:scale-95 shadow-sm"
+            >
+              Logout
             </button>
           </div>
         </>
