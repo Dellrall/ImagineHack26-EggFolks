@@ -1,10 +1,9 @@
 import { Navigate, Outlet, createRootRoute, createRoute } from '@tanstack/react-router';
 import AdminLayout from '../layouts/AdminLayout';
 import EmployeeLayout from '../layouts/EmployeeLayout';
-import AdminEmployees from './admin/employees';
-import AdminOverview from './admin/overview';
 import AdminReports from './admin/reports';
-import AdminSchedules from './admin/schedules';
+import mainAdmin from './admin/main';
+import AdminPerks from './admin/perks';
 import EmployeeDashboard from './employee/dashboard';
 import EmployeePerks from './employee/perks';
 import EmployeeProfile from './employee/profile';
@@ -12,6 +11,12 @@ import EmployeeRoutes from './employee/routes';
 
 const rootRoute = createRootRoute({
   component: Outlet,
+});
+
+const adminPerksRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: '/admin/gamification',
+  component: AdminPerks,
 });
 
 const homeRoute = createRoute({
@@ -50,36 +55,28 @@ const employeeProfileRoute = createRoute({
   component: EmployeeProfile,
 });
 
+// Admin Routes
 const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'admin',
   component: AdminLayout,
 });
 
+// Redirect /admin straight to the new unified dashboard
 const adminHomeRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/admin',
-  component: () => <Navigate to="/admin/overview" />,
+  component: () => <Navigate to="/admin/dashboard" />,
 });
 
-const adminOverviewRoute = createRoute({
+// The Unified Dashboard Route
+const adminDashboardRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
-  path: '/admin/overview',
-  component: AdminOverview,
+  path: '/admin/dashboard',
+  component: mainAdmin,
 });
 
-const adminSchedulesRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/schedules',
-  component: AdminSchedules,
-});
-
-const adminEmployeesRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/employees',
-  component: AdminEmployees,
-});
-
+// Kept reports as a separate page so the UI doesn't get cluttered
 const adminReportsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/admin/reports',
@@ -96,9 +93,8 @@ export const routeTree = rootRoute.addChildren([
   ]),
   adminLayoutRoute.addChildren([
     adminHomeRoute,
-    adminOverviewRoute,
-    adminSchedulesRoute,
-    adminEmployeesRoute,
+    adminPerksRoute,
+    adminDashboardRoute,
     adminReportsRoute,
   ]),
 ]);
