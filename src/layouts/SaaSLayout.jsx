@@ -17,12 +17,18 @@ const copy = {
 export default function SaaSLayout({ variant = 'employee' }) {
   const [open, setOpen] = useState(false);
   const content = copy[variant];
+  const isAdmin = variant === 'admin';
 
   return (
     <div className="min-h-screen bg-appBg dark:bg-slate-950 lg:flex">
-      <Sidebar variant={variant} open={open} onClose={() => setOpen(false)} />
+      {isAdmin && <Sidebar variant={variant} open={open} onClose={() => setOpen(false)} />}
       <div className="min-w-0 flex-1">
-        <Navbar title={content.title} subtitle={content.subtitle} onMenuClick={() => setOpen(true)} />
+        <Navbar
+          title={content.title}
+          subtitle={content.subtitle}
+          variant={variant}
+          onMenuClick={() => setOpen(true)}
+        />
         <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
           <Outlet />
         </main>

@@ -7,16 +7,21 @@ export const employeeProfile = {
 };
 
 export const recommendedRoute = {
-  name: 'LRT → Walk',
+  name: 'LRT + Walk',
   transportType: 'Public Transit',
   travelTime: '35 mins',
   carbonSaved: '2.3 kg CO₂',
+  carbonSavedTodayKg: 2.3,
   confidence: '94%',
 };
 
 export const schedule = {
   today: 'Office',
+  status: 'Office Day',
+  arrivalTime: '9:00 AM',
+  suggestedDepartureTime: '8:05 AM',
   location: 'HQ Floor 2',
+  recommendedRoute: 'LRT + Walk',
   week: [
     { day: 'Mon', mode: 'Office' },
     { day: 'Tue', mode: 'WFH' },
@@ -27,9 +32,16 @@ export const schedule = {
 };
 
 export const points = {
-  balance: 350,
-  monthlyTarget: 500,
-  monthlyProgress: 70,
+  balance: 1250,
+  monthlyTarget: 1500,
+  monthlyProgress: 83,
+  carbonSavedKg: 45,
+  carbonGoalKg: 100,
+  nearestReward: {
+    title: 'RM20 Grab Voucher',
+    pointsRequired: 1500,
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
+  },
 };
 
 export const allowance = {
