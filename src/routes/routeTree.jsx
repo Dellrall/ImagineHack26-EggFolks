@@ -10,20 +10,31 @@ import EmployeeProfile from './employee/profile';
 import EmployeeRoutes from './employee/routes';
 import EmployeeVouchers from './employee/vouchers';
 
+// IMPORT THE NEW LOGIN COMPONENT
+import Login from './auth/login'; // <-- adjust path based on where you saved it
+
 const rootRoute = createRootRoute({
   component: Outlet,
+});
+
+// NEW LOGIN ROUTE
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: Login,
+});
+
+const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  // REDIRECT TO LOGIN BY DEFAULT
+  component: () => <Navigate to="/login" />, 
 });
 
 const adminPerksRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/admin/gamification',
   component: AdminPerks,
-});
-
-const homeRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  component: () => <Navigate to="/dashboard" />,
 });
 
 const employeeLayoutRoute = createRoute({
@@ -92,6 +103,7 @@ const adminReportsRoute = createRoute({
 
 export const routeTree = rootRoute.addChildren([
   homeRoute,
+  loginRoute, // <-- ADD IT HERE
   employeeLayoutRoute.addChildren([
     employeeDashboardRoute,
     employeeRoutesRoute,
