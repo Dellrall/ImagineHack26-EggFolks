@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 	"os"
+
+	bridgeai "github.com/Dellrall/ImagineHack26-EggFolks/backend-ai/internal/ai"
 )
 
 type RouteRequest struct {
@@ -22,32 +23,23 @@ type AIResponse struct {
 func HandleRouteRecommendation(w http.ResponseWriter, r *http.Request) {
 	var req RouteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"data": null, "error": "Invalid payload"}`, http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, AIResponse{Data: nil, Error: stringPtr("invalid payload")})
 		return
 	}
 
-	// Forward request to Python AI Microservice
-	aiServiceURL := os.Getenv("AI_SERVICE_URL") + "/ai/route"
-	jsonData, _ := json.Marshal(req)
+	serviceURL := os.Getenv("AI_SERVICE_URL")
+	if serviceURL == "" {
+		writeJSON(w, http.StatusOK, AIResponse{Data: fallbackRouteRecommendation(), Error: nil})
+		return
+	}
 
-	resp, err := http.Post(aiServiceURL, "application/json", bytes.NewBuffer(jsonData))
+	result, err := bridgeai.New(serviceURL).RecommendRoute(r.Context(), req)
 	if err != nil {
-		// Fallback mechanism if AI is unreachable
-		fallback := map[string]interface{}{
-			"recommended_mode": "Rail Transit",
-			"efficiency_ratio": 8.5,
-			"warning":          "Adaptive AI offline. Defaulting to baseline rail.",
-		}
-		writeJSON(w, http.StatusOK, AIResponse{Data: fallback, Error: nil})
+		writeJSON(w, http.StatusOK, AIResponse{Data: fallbackRouteRecommendation(), Error: nil})
 		return
 	}
-	defer resp.Body.Close()
 
-	// Parse and pipe the response directly to the frontend
-	var aiResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&aiResult)
-
-	writeJSON(w, http.StatusOK, AIResponse{Data: aiResult, Error: nil})
+	writeJSON(w, http.StatusOK, AIResponse{Data: result, Error: nil})
 }
 
 // Helper function for consistent JSON envelopes
@@ -55,4 +47,16 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(payload)
+}
+
+func fallbackRouteRecommendation() map[string]interface{} {
+	return map[string]interface{}{
+		"recommended_mode": "Rail Transit",
+		"efficiency_ratio": 8.5,
+		"warning":          "Adaptive AI offline. Defaulting to baseline rail.",
+	}
+}
+
+func stringPtr(value string) *string {
+	return &value
 }
