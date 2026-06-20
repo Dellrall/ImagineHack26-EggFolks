@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getAvailablePerks = `-- name: GetAvailablePerks :many
@@ -15,7 +16,7 @@ SELECT id, name, point_cost, quantity_available, created_at FROM perks WHERE qua
 `
 
 func (q *Queries) GetAvailablePerks(ctx context.Context) ([]Perk, error) {
-	rows, err := q.db.QueryContext(ctx, getAvailablePerks)
+	rows, err := q.db.Query(ctx, getAvailablePerks)
 	if err != nil {
 		return nil, err
 	}
@@ -34,9 +35,6 @@ func (q *Queries) GetAvailablePerks(ctx context.Context) ([]Perk, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -51,12 +49,12 @@ FROM eco_route_logs
 `
 
 type GetCorporateCarbonMetricsRow struct {
-	TotalCo2Eliminated string
-	TotalHoursSaved    string
+	TotalCo2Eliminated pgtype.Numeric
+	TotalHoursSaved    pgtype.Numeric
 }
 
 func (q *Queries) GetCorporateCarbonMetrics(ctx context.Context) (GetCorporateCarbonMetricsRow, error) {
-	row := q.db.QueryRowContext(ctx, getCorporateCarbonMetrics)
+	row := q.db.QueryRow(ctx, getCorporateCarbonMetrics)
 	var i GetCorporateCarbonMetricsRow
 	err := row.Scan(&i.TotalCo2Eliminated, &i.TotalHoursSaved)
 	return i, err
@@ -74,7 +72,7 @@ type GetLeaderboardRow struct {
 }
 
 func (q *Queries) GetLeaderboard(ctx context.Context) ([]GetLeaderboardRow, error) {
-	rows, err := q.db.QueryContext(ctx, getLeaderboard)
+	rows, err := q.db.Query(ctx, getLeaderboard)
 	if err != nil {
 		return nil, err
 	}
@@ -87,13 +85,39 @@ func (q *Queries) GetLeaderboard(ctx context.Context) ([]GetLeaderboardRow, erro
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, name, email, password_hash, role, eco_points 
+FROM employees 
+WHERE email = $1 LIMIT 1
+`
+
+type GetUserByEmailRow struct {
+	ID           int32
+	Name         string
+	Email        string
+	PasswordHash string
+	Role         string
+	EcoPoints    int32
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.EcoPoints,
+	)
+	return i, err
 }
 
 const logEcoRoute = `-- name: LogEcoRoute :one
@@ -102,20 +126,20 @@ VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at
 `
 
 type LogEcoRouteParams struct {
-	EmployeeID            sql.NullInt32
+	EmployeeID            pgtype.Int4
 	TransportMode         string
-	DistanceKm            string
-	Co2SavedKg            string
-	GridlockHoursBypassed string
+	DistanceKm            pgtype.Numeric
+	Co2SavedKg            pgtype.Numeric
+	GridlockHoursBypassed pgtype.Numeric
 }
 
 type LogEcoRouteRow struct {
 	ID        int32
-	CreatedAt sql.NullTime
+	CreatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) LogEcoRoute(ctx context.Context, arg LogEcoRouteParams) (LogEcoRouteRow, error) {
-	row := q.db.QueryRowContext(ctx, logEcoRoute,
+	row := q.db.QueryRow(ctx, logEcoRoute,
 		arg.EmployeeID,
 		arg.TransportMode,
 		arg.DistanceKm,
@@ -137,6 +161,6 @@ type UpdateEmployeePointsParams struct {
 }
 
 func (q *Queries) UpdateEmployeePoints(ctx context.Context, arg UpdateEmployeePointsParams) error {
-	_, err := q.db.ExecContext(ctx, updateEmployeePoints, arg.EcoPoints, arg.ID)
+	_, err := q.db.Exec(ctx, updateEmployeePoints, arg.EcoPoints, arg.ID)
 	return err
 }

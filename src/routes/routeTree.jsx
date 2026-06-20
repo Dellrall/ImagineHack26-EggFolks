@@ -1,4 +1,5 @@
 import { Navigate, Outlet, createRootRoute, createRoute } from '@tanstack/react-router';
+import Login from './index';
 import AdminLayout from '../layouts/AdminLayout';
 import EmployeeLayout from '../layouts/EmployeeLayout';
 import AdminReports from './admin/reports';
@@ -13,16 +14,16 @@ const rootRoute = createRootRoute({
   component: Outlet,
 });
 
+const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: Login,
+});
+
 const adminPerksRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/admin/gamification',
   component: AdminPerks,
-});
-
-const homeRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  component: () => <Navigate to="/dashboard" />,
 });
 
 const employeeLayoutRoute = createRoute({
@@ -33,25 +34,25 @@ const employeeLayoutRoute = createRoute({
 
 const employeeDashboardRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
-  path: '/dashboard',
+  path: '/employee/dashboard',
   component: EmployeeDashboard,
 });
 
 const employeeRoutesRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
-  path: '/routes',
+  path: '/employee/routes',
   component: EmployeeRoutes,
 });
 
 const employeePerksRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
-  path: '/perks',
+  path: '/employee/perks',
   component: EmployeePerks,
 });
 
 const employeeProfileRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
-  path: '/profile',
+  path: '/employee/profile',
   component: EmployeeProfile,
 });
 

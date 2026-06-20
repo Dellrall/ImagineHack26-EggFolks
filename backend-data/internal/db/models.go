@@ -5,43 +5,44 @@
 package db
 
 import (
-	"database/sql"
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ClaimedPerk struct {
 	ID         int32
-	EmployeeID sql.NullInt32
-	PerkID     sql.NullInt32
-	CreatedAt  sql.NullTime
+	EmployeeID pgtype.Int4
+	PerkID     pgtype.Int4
+	CreatedAt  pgtype.Timestamptz
 }
 
 type EcoRouteLog struct {
 	ID                    int32
-	EmployeeID            sql.NullInt32
+	EmployeeID            pgtype.Int4
 	TransportMode         string
-	DistanceKm            string
-	Co2SavedKg            string
-	GridlockHoursBypassed string
-	CreatedAt             sql.NullTime
+	DistanceKm            pgtype.Numeric
+	Co2SavedKg            pgtype.Numeric
+	GridlockHoursBypassed pgtype.Numeric
+	CreatedAt             pgtype.Timestamptz
 }
 
 type Employee struct {
-	ID        int32
-	Name      string
-	Email     string
-	EcoPoints int32
-	CreatedAt sql.NullTime
+	ID           int32
+	Name         string
+	Email        string
+	EcoPoints    int32
+	CreatedAt    pgtype.Timestamptz
+	PasswordHash string
+	Role         string
 }
 
 type FeedbackLoop struct {
 	ID               int32
-	RouteLogID       sql.NullInt32
-	EmployeeID       sql.NullInt32
+	RouteLogID       pgtype.Int4
+	EmployeeID       pgtype.Int4
 	RatingScore      int32
-	WeatherCondition sql.NullString
-	PenaltyApplied   sql.NullBool
-	CreatedAt        sql.NullTime
+	WeatherCondition pgtype.Text
+	PenaltyApplied   pgtype.Bool
+	CreatedAt        pgtype.Timestamptz
 }
 
 type Perk struct {
@@ -49,23 +50,23 @@ type Perk struct {
 	Name              string
 	PointCost         int32
 	QuantityAvailable int32
-	CreatedAt         sql.NullTime
+	CreatedAt         pgtype.Timestamptz
 }
 
 type WfhRequest struct {
 	ID         int32
-	EmployeeID sql.NullInt32
-	Date       time.Time
+	EmployeeID pgtype.Int4
+	Date       pgtype.Date
 	Reason     string
-	Status     sql.NullString
-	CreatedAt  sql.NullTime
+	Status     pgtype.Text
+	CreatedAt  pgtype.Timestamptz
 }
 
 type ZoneOccupancy struct {
 	ID               int32
 	FloorNumber      int32
 	ZoneID           string
-	CurrentHeadcount sql.NullInt32
+	CurrentHeadcount pgtype.Int4
 	MaxCapacity      int32
-	UpdatedAt        sql.NullTime
+	UpdatedAt        pgtype.Timestamptz
 }

@@ -1,0 +1,3 @@
+ALTER TABLE employees
+ADD COLUMN password_hash VARCHAR(255) NOT NULL,
+ADD COLUMN role VARCHAR(50) DEFAULT 'employee' NOT NULL;

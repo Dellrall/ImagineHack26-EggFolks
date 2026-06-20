@@ -6,10 +6,10 @@ import { getCurrentUser } from '../../lib/auth';
 import { recommendTransportationRoute } from '../../lib/transportationRouter';
 
 const employeeNav = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/routes', label: 'Routes' },
-  { to: '/perks', label: 'Perks' },
-  { to: '/profile', label: 'Profile' },
+  { to: '/employee/dashboard', label: 'Dashboard' },
+  { to: '/employee/routes', label: 'Routes' },
+  { to: '/employee/perks', label: 'Perks' },
+  { to: '/employee/profile', label: 'Profile' },
 ];
 
 export default function Navbar({ title, subtitle, variant = 'employee', onMenuClick }) {
