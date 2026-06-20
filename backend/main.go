@@ -14,21 +14,18 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
-
-	// This connects to your new database folder
-	"github.com/Dellrall/ImagineHack26-EggFolks/database"
 )
 
 func startSmartScheduler() {
 	c := cron.New()
 	c.AddFunc("@every 2m", func() {
 		log.Println("[SCHEDULER] Running predictive environment analytics...")
-		var pendingRequests []database.WFHRequest
-		database.DB.Where("status = ?", "pending").Find(&pendingRequests)
+		var pendingRequests []WFHRequest
+		DB.Where("status = ?", "pending").Find(&pendingRequests)
 
 		for _, req := range pendingRequests {
 			req.Status = "approved_by_ai"
-			database.DB.Save(&req)
+			DB.Save(&req)
 			log.Printf("[SCHEDULER] Auto-approved WFH Request ID %d.\n", req.ID)
 		}
 	})
@@ -40,10 +37,7 @@ func startSmartScheduler() {
 
 func main() {
 	_ = godotenv.Load()
-
-	// Initialize the database from your new package
-	database.ConnectDB()
-
+	initDB() // Calls the function from database.go
 	startSmartScheduler()
 
 	router := gin.Default()
@@ -59,19 +53,12 @@ func main() {
 
 	api := router.Group("/api")
 	{
-		// Commuter Flow
 		api.POST("/routes/calculate", calculateRouteViaAI)
 		api.POST("/routes/select", saveEcoRoute)
 		api.POST("/routes/feedback", submitRLHFFeedback)
-
-		// WFH Flow
 		api.POST("/requests/wfh", createWFHRequest)
-
-		// Dashboard Flow
 		api.GET("/dashboard/metrics", getDashboardMetrics)
 		api.GET("/dashboard/density", getZoneDensity)
-
-		// Gamification & Perks
 		api.GET("/employees/leaderboard", getLeaderboard)
 		api.POST("/perks/redeem", redeemPerk)
 	}
@@ -90,13 +77,13 @@ func main() {
 // --- API HANDLERS ---
 
 func createWFHRequest(c *gin.Context) {
-	var req database.WFHRequest
+	var req WFHRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	req.Status = "pending"
-	if result := database.DB.Create(&req); result.Error != nil {
+	if result := DB.Create(&req); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save to database"})
 		return
 	}
@@ -104,34 +91,34 @@ func createWFHRequest(c *gin.Context) {
 }
 
 func saveEcoRoute(c *gin.Context) {
-	var logEntry database.EcoRouteLog
+	var logEntry EcoRouteLog
 	if err := c.ShouldBindJSON(&logEntry); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if result := database.DB.Create(&logEntry); result.Error != nil {
+	if result := DB.Create(&logEntry); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save route log"})
 		return
 	}
 
-	var emp database.Employee
-	if err := database.DB.First(&emp, logEntry.EmployeeID).Error; err == nil {
+	var emp Employee
+	if err := DB.First(&emp, logEntry.EmployeeID).Error; err == nil {
 		emp.EcoPoints += int(logEntry.CO2SavedKG * 10)
-		database.DB.Save(&emp)
+		DB.Save(&emp)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Route logged and points awarded", "data": logEntry})
 }
 
 func submitRLHFFeedback(c *gin.Context) {
-	var feedback database.FeedbackLoop
+	var feedback FeedbackLoop
 	if err := c.ShouldBindJSON(&feedback); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	feedback.PenaltyApplied = feedback.RatingScore < 3
-	if result := database.DB.Create(&feedback); result.Error != nil {
+	if result := DB.Create(&feedback); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save feedback"})
 		return
 	}
@@ -141,8 +128,8 @@ func submitRLHFFeedback(c *gin.Context) {
 func getDashboardMetrics(c *gin.Context) {
 	var totalCO2 float64
 	var totalGridlock float64
-	database.DB.Model(&database.EcoRouteLog{}).Select("sum(co2_saved_kg)").Row().Scan(&totalCO2)
-	database.DB.Model(&database.EcoRouteLog{}).Select("sum(gridlock_hours_bypassed)").Row().Scan(&totalGridlock)
+	DB.Model(&EcoRouteLog{}).Select("sum(co2_saved_kg)").Row().Scan(&totalCO2)
+	DB.Model(&EcoRouteLog{}).Select("sum(gridlock_hours_bypassed)").Row().Scan(&totalGridlock)
 	c.JSON(http.StatusOK, gin.H{
 		"total_co2_eliminated_kg":   totalCO2,
 		"cumulative_hours_bypassed": totalGridlock,
@@ -150,14 +137,14 @@ func getDashboardMetrics(c *gin.Context) {
 }
 
 func getZoneDensity(c *gin.Context) {
-	var zones []database.ZoneOccupancy
-	database.DB.Find(&zones)
+	var zones []ZoneOccupancy
+	DB.Find(&zones)
 	c.JSON(http.StatusOK, gin.H{"data": zones})
 }
 
 func getLeaderboard(c *gin.Context) {
-	var employees []database.Employee
-	database.DB.Order("eco_points desc").Limit(10).Find(&employees)
+	var employees []Employee
+	DB.Order("eco_points desc").Limit(10).Find(&employees)
 	c.JSON(http.StatusOK, gin.H{"leaderboard": employees})
 }
 
@@ -172,13 +159,13 @@ func redeemPerk(c *gin.Context) {
 		return
 	}
 
-	err := database.DB.Transaction(func(tx *gorm.DB) error {
-		var emp database.Employee
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		var emp Employee
 		if err := tx.First(&emp, req.EmployeeID).Error; err != nil {
 			return err
 		}
 
-		var perk database.Perk
+		var perk Perk
 		if err := tx.First(&perk, req.PerkID).Error; err != nil {
 			return err
 		}
@@ -203,7 +190,7 @@ func redeemPerk(c *gin.Context) {
 			return err
 		}
 
-		claim := database.ClaimedPerk{EmployeeID: emp.ID, PerkID: perk.ID}
+		claim := ClaimedPerk{EmployeeID: emp.ID, PerkID: perk.ID}
 		if err := tx.Create(&claim).Error; err != nil {
 			return err
 		}
