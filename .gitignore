@@ -3,4 +3,10 @@ dist/
 .agents/
 .env
 .env.local
+#agents folder
+.env/
+backend/.env
+backend-ai/.env
+backend-data/.env
+legacy/backend-legacy/.env
 npm-debug.log*
