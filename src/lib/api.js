@@ -18,27 +18,27 @@ const wait = (payload, ms = 250) =>
   });
 
 export const api = {
-  getRecommendedRoute: () => {
-    const recommendation = recommendTransportationRoute({
-      start_location: 'Subang Jaya',
-      destination: 'KL Sentral',
-      departure_time: '08:00',
-      expected_arrival: '09:00',
-      is_rushing: false,
-    });
-
-    return wait({
-      name: recommendation.recommended_route,
-      transportType: recommendation.transport_type,
-      travelTime: `${recommendation.estimated_travel_time} mins`,
-      carbonSaved: `${recommendation.carbon_saved_kg} kg CO₂`,
-      carbonSavedTodayKg: recommendation.carbon_saved_kg,
-      confidence: '94%',
-      reason: recommendation.reason,
-      environmentalScore: recommendation.environmental_score,
-      alternatives: recommendation.alternatives,
-      raw: recommendation,
-    });
+  getRecommendedRoute: async (preference = 'eco') => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/v1/routes/recommend?preference=${preference}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const envelope = await response.json();
+      if (envelope.error) {
+        throw new Error(envelope.error);
+      }
+      return envelope.data;
+    } catch (err) {
+      console.error("Failed to fetch recommended route from backend, falling back to mock:", err);
+      return {
+        name: preference === 'speed' ? 'Fully Car (Driving)' : 'LRT Kelana Jaya Line → Walk',
+        transportType: preference === 'speed' ? 'Drive' : 'Public Transit',
+        travelTime: preference === 'speed' ? '24 mins' : '35 mins',
+        carbonSaved: preference === 'speed' ? '0.0 kg CO₂' : '2.3 kg CO₂',
+        confidence: '94%',
+      };
+    }
   },
   postRouteFeedback: (feedback) => wait({ ok: true, feedback }),
   getMySchedule: () => {
@@ -84,38 +84,111 @@ export const api = {
       raw: smartSchedule,
     });
   },
-  getMyPoints: () => {
-    const engineResult = calculateEcoPoints({
-      transportationMethod: 'MRT',
-      carbonSaved: 2.5,
-      travelDistance: 14,
-      employeeHistory: {
-        currentBalance: 1330,
-        consecutiveEcoTrips: 7,
-        monthlyGoalAchieved: false,
-      },
-    });
-
-    return wait({
-      ...points,
-      balance: engineResult.current_balance,
-      nearestReward: {
-        ...points.nearestReward,
-        title: engineResult.next_reward,
-      },
-      pointsEarnedToday: engineResult.points_earned,
-      pointsNeeded: engineResult.points_needed,
-      validation: engineResult.validation,
-    });
+  getMyPoints: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/points/me');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      const engineResult = calculateEcoPoints({
+        transportationMethod: 'MRT',
+        carbonSaved: 2.5,
+        travelDistance: 14,
+        employeeHistory: {
+          currentBalance: 1330,
+          consecutiveEcoTrips: 7,
+          monthlyGoalAchieved: false,
+        },
+      });
+      return {
+        ...points,
+        balance: engineResult.current_balance,
+        nearestReward: {
+          ...points.nearestReward,
+          title: engineResult.next_reward,
+        },
+        pointsEarnedToday: engineResult.points_earned,
+        pointsNeeded: engineResult.points_needed,
+        validation: engineResult.validation,
+      };
+    }
   },
-  getMyAllowance: () => wait(allowance),
-  getCarbonStats: () => wait(carbonStats),
-  getTardinessStats: () => wait(tardinessStats),
-  getSatisfactionStats: () => wait(satisfactionStats),
-  getPerks: () => wait(perks),
-  postClaimPerk: (perkId) => wait({ ok: true, perkId }),
-  getRouteHistory: () => wait(routeHistory),
-  getEmployeeProfile: () => wait(employeeProfile),
+  getMyAllowance: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/allowance/me');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return allowance;
+    }
+  },
+  getCarbonStats: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/stats/carbon');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return carbonStats;
+    }
+  },
+  getTardinessStats: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/stats/tardiness');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return tardinessStats;
+    }
+  },
+  getSatisfactionStats: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/stats/satisfaction');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return satisfactionStats;
+    }
+  },
+  getPerks: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/perks');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return perks;
+    }
+  },
+  postClaimPerk: async (perkId) => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/perks/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ perkId, employeeId: 1 }),
+      });
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return { ok: true, perkId };
+    }
+  },
+  getRouteHistory: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/routes/history');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return routeHistory;
+    }
+  },
+  getEmployeeProfile: async () => {
+    try {
+      const response = await fetch('http://localhost:8081/internal/v1/employees/profile');
+      if (!response.ok) throw new Error();
+      return await response.json();
+    } catch {
+      return employeeProfile;
+    }
+  },
 };
 
 export const endpoints = {
