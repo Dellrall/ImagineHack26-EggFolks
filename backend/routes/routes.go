@@ -10,7 +10,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	r.POST("/auth/login", handlers.Login)
 
-	r.POST("/route/recommend", handlers.RecommendRoute)
+	r.GET("/route/recommend", handlers.RecommendRoute)
 
 	r.POST("/feedback", handlers.SubmitFeedback)
 
