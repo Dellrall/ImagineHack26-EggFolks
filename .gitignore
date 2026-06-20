@@ -1,2 +1,5 @@
 #agents folder
 .env/
+backend/.env
+backend-ai/.env
+backend-data/.env
