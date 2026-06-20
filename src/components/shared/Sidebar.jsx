@@ -1,10 +1,11 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { BarChart3, FileText, Gift, Home, Leaf, Map, User, Zap } from 'lucide-react';
+import { BarChart3, FileText, Gift, Home, Leaf, Map, Ticket, User, Zap } from 'lucide-react';
 
 const employeeNav = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/routes', label: 'Routes', icon: Map },
   { to: '/perks', label: 'Perks', icon: Gift },
+  { to: '/vouchers', label: 'Vouchers', icon: Ticket },
   { to: '/profile', label: 'Profile', icon: User },
 ];
 

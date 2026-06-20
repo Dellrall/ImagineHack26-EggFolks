@@ -17,6 +17,26 @@ const wait = (payload, ms = 250) =>
     window.setTimeout(() => resolve(structuredClone(payload)), ms);
   });
 
+const getStoredClaimedPerks = () => {
+  try {
+    const stored = localStorage.getItem('eco_claimed_perks');
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+const saveStoredClaimedPerks = (claimed) => {
+  try {
+    localStorage.setItem('eco_claimed_perks', JSON.stringify(claimed));
+  } catch (e) {}
+};
+
+const getDeductedPoints = () => {
+  const claimed = getStoredClaimedPerks();
+  return claimed.reduce((sum, perk) => sum + (perk.pointsRequired || 0), 0);
+};
+
 export const api = {
   getRecommendedRoute: () => {
     const recommendation = recommendTransportationRoute({
@@ -96,15 +116,18 @@ export const api = {
       },
     });
 
+    const deducted = getDeductedPoints();
+    const finalBalance = Math.max(0, engineResult.current_balance - deducted);
+
     return wait({
       ...points,
-      balance: engineResult.current_balance,
+      balance: finalBalance,
       nearestReward: {
         ...points.nearestReward,
         title: engineResult.next_reward,
       },
       pointsEarnedToday: engineResult.points_earned,
-      pointsNeeded: engineResult.points_needed,
+      pointsNeeded: Math.max(0, points.nearestReward.pointsRequired - finalBalance),
       validation: engineResult.validation,
     });
   },
@@ -113,7 +136,42 @@ export const api = {
   getTardinessStats: () => wait(tardinessStats),
   getSatisfactionStats: () => wait(satisfactionStats),
   getPerks: () => wait(perks),
-  postClaimPerk: (perkId) => wait({ ok: true, perkId }),
+  postClaimPerk: (perkId) => {
+    const perk = perks.find((p) => p.id === perkId);
+    if (!perk) {
+      return wait({ ok: false, error: 'Perk not found' });
+    }
+
+    const engineResult = calculateEcoPoints({
+      transportationMethod: 'MRT',
+      carbonSaved: 2.5,
+      travelDistance: 14,
+      employeeHistory: {
+        currentBalance: 1330,
+        consecutiveEcoTrips: 7,
+        monthlyGoalAchieved: false,
+      },
+    });
+
+    const deducted = getDeductedPoints();
+    const finalBalance = Math.max(0, engineResult.current_balance - deducted);
+
+    if (finalBalance < perk.pointsRequired) {
+      return wait({ ok: false, error: 'Insufficient points to claim this perk' });
+    }
+
+    const claimed = getStoredClaimedPerks();
+    const newClaim = {
+      ...perk,
+      claimedAt: new Date().toISOString(),
+      claimId: `${perkId}-${Date.now()}`
+    };
+    claimed.push(newClaim);
+    saveStoredClaimedPerks(claimed);
+
+    return wait({ ok: true, claim: newClaim });
+  },
+  getClaimedPerks: () => wait(getStoredClaimedPerks()),
   getRouteHistory: () => wait(routeHistory),
   getEmployeeProfile: () => wait(employeeProfile),
 };
@@ -129,4 +187,5 @@ export const endpoints = {
   satisfactionStats: 'GET /internal/v1/stats/satisfaction',
   perks: 'GET /internal/v1/perks',
   claimPerk: 'POST /internal/v1/perks/claim',
+  claimedPerks: 'GET /internal/v1/perks/claimed',
 };

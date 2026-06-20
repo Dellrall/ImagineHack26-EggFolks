@@ -14,9 +14,6 @@ export default function DashboardHero({ carbonToday, pointsToday }) {
     >
       <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-emerald-100">
-            Eco-route optimizer
-          </p>
           <h2 className="mt-3 text-3xl font-black md:text-5xl">
             Good Morning, {user.name.split(' ')[0]} 👋
           </h2>

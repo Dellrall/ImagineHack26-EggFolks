@@ -1,7 +1,9 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export function usePerks() {
+  const queryClient = useQueryClient();
+
   const perks = useQuery({
     queryKey: ['perks'],
     queryFn: api.getPerks,
@@ -10,8 +12,21 @@ export function usePerks() {
 
   const claim = useMutation({
     mutationFn: api.postClaimPerk,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['points'] });
+      queryClient.invalidateQueries({ queryKey: ['claimedPerks'] });
+      queryClient.invalidateQueries({ queryKey: ['perks'] });
+    },
     retry: 1,
   });
 
   return { perks, claim };
+}
+
+export function useClaimedPerks() {
+  return useQuery({
+    queryKey: ['claimedPerks'],
+    queryFn: api.getClaimedPerks,
+    retry: 2,
+  });
 }
