@@ -1,70 +1,50 @@
-import { Outlet, createRootRoute, createRoute } from '@tanstack/react-router';
+import { Navigate, Outlet, createRootRoute, createRoute } from '@tanstack/react-router';
 import AdminLayout from '../layouts/AdminLayout';
-import AppLayout from '../layouts/AppLayout';
-import AdminAIRecommendations from '../pages/admin/AdminAIRecommendations';
-import AdminCarbon from '../pages/admin/AdminCarbon';
-import AdminEmployees from '../pages/admin/AdminEmployees';
-import AdminNotifications from '../pages/admin/AdminNotifications';
-import AdminOverview from '../pages/admin/AdminOverview';
-import AdminReports from '../pages/admin/AdminReports';
-import AdminRouteAnalytics from '../pages/admin/AdminRouteAnalytics';
-import AdminSettings from '../pages/admin/AdminSettings';
-import AdminWorkspace from '../pages/admin/AdminWorkspace';
-import CarbonCredits from '../pages/CarbonCredits';
-import DashboardHome from '../pages/DashboardHome';
-import EmployeeProfile from '../pages/EmployeeProfile';
-import Notifications from '../pages/Notifications';
-import RouteFeedback from '../pages/RouteFeedback';
-import RouteRecommendations from '../pages/RouteRecommendations';
-import WorkspaceSchedule from '../pages/WorkspaceSchedule';
+import EmployeeLayout from '../layouts/EmployeeLayout';
+import AdminEmployees from './admin/employees';
+import AdminOverview from './admin/overview';
+import AdminReports from './admin/reports';
+import AdminSchedules from './admin/schedules';
+import EmployeeDashboard from './employee/dashboard';
+import EmployeePerks from './employee/perks';
+import EmployeeProfile from './employee/profile';
+import EmployeeRoutes from './employee/routes';
 
 const rootRoute = createRootRoute({
   component: Outlet,
 });
 
+const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: () => <Navigate to="/dashboard" />,
+});
+
 const employeeLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'employee',
-  component: AppLayout,
+  component: EmployeeLayout,
 });
 
-const dashboardRoute = createRoute({
+const employeeDashboardRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
-  path: '/',
-  component: DashboardHome,
+  path: '/dashboard',
+  component: EmployeeDashboard,
 });
 
-const routesRoute = createRoute({
+const employeeRoutesRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
   path: '/routes',
-  component: RouteRecommendations,
+  component: EmployeeRoutes,
 });
 
-const feedbackRoute = createRoute({
+const employeePerksRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
-  path: '/feedback',
-  component: RouteFeedback,
+  path: '/perks',
+  component: EmployeePerks,
 });
 
-const creditsRoute = createRoute({
-  getParentRoute: () => employeeLayoutRoute,
-  path: '/credits',
-  component: CarbonCredits,
-});
-
-const scheduleRoute = createRoute({
-  getParentRoute: () => employeeLayoutRoute,
-  path: '/schedule',
-  component: WorkspaceSchedule,
-});
-
-const notificationsRoute = createRoute({
-  getParentRoute: () => employeeLayoutRoute,
-  path: '/notifications',
-  component: Notifications,
-});
-
-const profileRoute = createRoute({
+const employeeProfileRoute = createRoute({
   getParentRoute: () => employeeLayoutRoute,
   path: '/profile',
   component: EmployeeProfile,
@@ -76,10 +56,22 @@ const adminLayoutRoute = createRoute({
   component: AdminLayout,
 });
 
-const adminOverviewRoute = createRoute({
+const adminHomeRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/admin',
+  component: () => <Navigate to="/admin/overview" />,
+});
+
+const adminOverviewRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: '/admin/overview',
   component: AdminOverview,
+});
+
+const adminSchedulesRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: '/admin/schedules',
+  component: AdminSchedules,
 });
 
 const adminEmployeesRoute = createRoute({
@@ -88,67 +80,25 @@ const adminEmployeesRoute = createRoute({
   component: AdminEmployees,
 });
 
-const adminWorkspaceRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/workspace',
-  component: AdminWorkspace,
-});
-
-const adminCarbonRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/carbon',
-  component: AdminCarbon,
-});
-
-const adminRoutesRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/routes',
-  component: AdminRouteAnalytics,
-});
-
-const adminAiRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/ai',
-  component: AdminAIRecommendations,
-});
-
-const adminNotificationsRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/notifications',
-  component: AdminNotifications,
-});
-
 const adminReportsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/admin/reports',
   component: AdminReports,
 });
 
-const adminSettingsRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: '/admin/settings',
-  component: AdminSettings,
-});
-
 export const routeTree = rootRoute.addChildren([
+  homeRoute,
   employeeLayoutRoute.addChildren([
-    dashboardRoute,
-    routesRoute,
-    feedbackRoute,
-    creditsRoute,
-    scheduleRoute,
-    notificationsRoute,
-    profileRoute,
+    employeeDashboardRoute,
+    employeeRoutesRoute,
+    employeePerksRoute,
+    employeeProfileRoute,
   ]),
   adminLayoutRoute.addChildren([
+    adminHomeRoute,
     adminOverviewRoute,
+    adminSchedulesRoute,
     adminEmployeesRoute,
-    adminWorkspaceRoute,
-    adminCarbonRoute,
-    adminRoutesRoute,
-    adminAiRoute,
-    adminNotificationsRoute,
     adminReportsRoute,
-    adminSettingsRoute,
   ]),
 ]);
