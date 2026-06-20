@@ -8,6 +8,7 @@ import EmployeeDashboard from './employee/dashboard';
 import EmployeePerks from './employee/perks';
 import EmployeeProfile from './employee/profile';
 import EmployeeRoutes from './employee/routes';
+import EmployeeVouchers from './employee/vouchers';
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -55,6 +56,12 @@ const employeeProfileRoute = createRoute({
   component: EmployeeProfile,
 });
 
+const employeeVouchersRoute = createRoute({
+  getParentRoute: () => employeeLayoutRoute,
+  path: '/vouchers',
+  component: EmployeeVouchers,
+});
+
 // Admin Routes
 const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -90,6 +97,7 @@ export const routeTree = rootRoute.addChildren([
     employeeRoutesRoute,
     employeePerksRoute,
     employeeProfileRoute,
+    employeeVouchersRoute,
   ]),
   adminLayoutRoute.addChildren([
     adminHomeRoute,

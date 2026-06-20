@@ -9,7 +9,7 @@ const employeeNav = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/routes', label: 'Routes' },
   { to: '/perks', label: 'Perks' },
-  { to: '/profile', label: 'Profile' },
+  { to: '/vouchers', label: 'Vouchers' },
 ];
 
 export default function Navbar({ title, subtitle, variant = 'employee', onMenuClick }) {
@@ -49,7 +49,9 @@ export default function Navbar({ title, subtitle, variant = 'employee', onMenuCl
             <h1 className="text-xl font-black text-slate-950 dark:text-white md:text-2xl">
               {title}
             </h1>
-            <p className="hidden text-sm text-slate-500 sm:block">{subtitle}</p>
+            {subtitle && (
+              <p className="hidden text-sm text-slate-500 sm:block">{subtitle}</p>
+            )}
           </div>
 
         </div>
@@ -210,9 +212,13 @@ export default function Navbar({ title, subtitle, variant = 'employee', onMenuCl
             </div>
           )}
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-black text-white">
+          <Link
+            to="/profile"
+            title="View Profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-black text-white transition hover:opacity-90 active:scale-95 shadow-sm"
+          >
             {user.name.split(' ').map((part) => part[0]).join('')}
-          </div>
+          </Link>
         </div>
       </div>
 

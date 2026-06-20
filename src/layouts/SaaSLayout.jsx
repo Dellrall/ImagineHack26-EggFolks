@@ -6,7 +6,7 @@ import Sidebar from '../components/shared/Sidebar';
 const copy = {
   employee: {
     title: 'Employee Dashboard',
-    subtitle: 'Eco routes, perks, schedules, and personal impact',
+    subtitle: '',
   },
   admin: {
     title: 'Admin Dashboard',
