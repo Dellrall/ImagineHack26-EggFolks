@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	bridgeai "github.com/Dellrall/ImagineHack26-EggFolks/backend-ai/internal/ai"
+	"github.com/Dellrall/ImagineHack26-EggFolks/backend-ai/internal/google"
 )
 
 type RouteRequest struct {
@@ -20,23 +20,64 @@ type AIResponse struct {
 	Error *string     `json:"error"`
 }
 
+type RecommendedRouteWithAlternative struct {
+	Name          string               `json:"name"`
+	TransportType string               `json:"transportType"`
+	TravelTime    string               `json:"travelTime"`
+	CarbonSaved   string               `json:"carbonSaved"`
+	Confidence    string               `json:"confidence"`
+	Options       []google.GoogleRoute `json:"options"`
+}
+
 func HandleRouteRecommendation(w http.ResponseWriter, r *http.Request) {
-	var req RouteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, AIResponse{Data: nil, Error: stringPtr("invalid payload")})
-		return
+	var origin, destination string
+
+	if r.Method == http.MethodPost {
+		var req RouteRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+			origin = req.Origin
+			destination = req.Destination
+		}
+	} else {
+		// GET request
+		origin = r.URL.Query().Get("origin")
+		destination = r.URL.Query().Get("destination")
 	}
 
-	serviceURL := os.Getenv("AI_SERVICE_URL")
-	if serviceURL == "" {
-		writeJSON(w, http.StatusOK, AIResponse{Data: fallbackRouteRecommendation(), Error: nil})
-		return
+	// Fallback default locations if not provided
+	if origin == "" {
+		origin = "Subang Jaya"
+	}
+	if destination == "" {
+		destination = "Kuala Lumpur Sentral"
 	}
 
-	result, err := bridgeai.New(serviceURL).RecommendRoute(r.Context(), req)
-	if err != nil {
-		writeJSON(w, http.StatusOK, AIResponse{Data: fallbackRouteRecommendation(), Error: nil})
-		return
+	apiKey := os.Getenv("GOOGLE_MAPS_API_KEY")
+	routes, err := google.FetchMultiModeRoutes(r.Context(), origin, destination, apiKey)
+	if err != nil || len(routes) == 0 {
+		routes = google.GetMockRoutes()
+	}
+
+	// Choose the Public Transit option as the recommended eco-route (typically index 2 in our implementation)
+	var recommended google.GoogleRoute
+	for _, rt := range routes {
+		if rt.TransportType == "Public Transit" {
+			recommended = rt
+			break
+		}
+	}
+	// Fallback to first option if no Public Transit is found
+	if recommended.Name == "" && len(routes) > 0 {
+		recommended = routes[0]
+	}
+
+	result := RecommendedRouteWithAlternative{
+		Name:          recommended.Name,
+		TransportType: recommended.TransportType,
+		TravelTime:    recommended.TravelTime,
+		CarbonSaved:   recommended.CarbonSaved,
+		Confidence:    recommended.Confidence,
+		Options:       routes,
 	}
 
 	writeJSON(w, http.StatusOK, AIResponse{Data: result, Error: nil})
@@ -49,14 +90,7 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	json.NewEncoder(w).Encode(payload)
 }
 
-func fallbackRouteRecommendation() map[string]interface{} {
-	return map[string]interface{}{
-		"recommended_mode": "Rail Transit",
-		"efficiency_ratio": 8.5,
-		"warning":          "Adaptive AI offline. Defaulting to baseline rail.",
-	}
-}
-
 func stringPtr(value string) *string {
 	return &value
 }
+
