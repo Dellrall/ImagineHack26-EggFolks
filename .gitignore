@@ -1,0 +1,4 @@
+#agents folder
+.env/
+agents/.env
+agents/.venv/
