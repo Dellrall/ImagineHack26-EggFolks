@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { BarChart3, CalendarDays, FileText, Gift, Home, Leaf, Map, User, Users } from 'lucide-react';
+import { BarChart3, FileText, Gift, Home, Leaf, Map, User, Zap } from 'lucide-react';
 
 const employeeNav = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -9,16 +9,15 @@ const employeeNav = [
 ];
 
 const adminNav = [
-  { to: '/admin/overview', label: 'Overview', icon: BarChart3 },
-  { to: '/admin/schedules', label: 'Schedules', icon: CalendarDays },
-  { to: '/admin/employees', label: 'Employees', icon: Users },
+  { to: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/admin/gamification', label: 'Perks', icon: Zap }, // <-- New Link
   { to: '/admin/reports', label: 'Reports', icon: FileText },
 ];
 
 export default function Sidebar({ variant = 'employee', open, onClose }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const items = variant === 'admin' ? adminNav : employeeNav;
-  const title = variant === 'admin' ? 'EcoRoute Admin' : 'EcoRoute';
+  const title = variant === 'admin' ? 'Cortisons Admin' : 'Cortisons';
 
   return (
     <>
@@ -42,7 +41,9 @@ export default function Sidebar({ variant = 'employee', open, onClose }) {
         <nav className="mt-8 space-y-2">
           {items.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.to;
+            // Updated active check to handle sub-routes if necessary
+            const active = pathname.startsWith(item.to); 
+            
             return (
               <Link
                 key={item.to}
