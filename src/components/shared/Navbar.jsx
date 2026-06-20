@@ -17,16 +17,60 @@ export default function Navbar({ title, subtitle, variant = 'employee', onMenuCl
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [smartOpen, setSmartOpen] = useState(false);
   const [isRushing, setIsRushing] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const user = getCurrentUser();
   const isAdmin = variant === 'admin';
-  const recommendation = recommendTransportationRoute({
-    start_location: 'Subang Jaya',
-    destination: 'KL Sentral',
-    departure_time: '08:00',
-    expected_arrival: '09:00',
-    is_rushing: isRushing,
-  });
+
+  useEffect(() => {
+    if (!smartOpen) return;
+    setLoading(true);
+    const pref = isRushing ? 'speed' : 'eco';
+    fetch(`http://localhost:8080/api/v1/routes/recommend?preference=${pref}&origin=Subang+Jaya&destination=KL+Sentral`)
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.data) {
+          setRecommendation(res.data);
+        }
+      })
+      .catch(() => {
+        const fallback = recommendTransportationRoute({
+          start_location: 'Subang Jaya',
+          destination: 'KL Sentral',
+          departure_time: '08:00',
+          expected_arrival: '09:00',
+          is_rushing: isRushing,
+        });
+        setRecommendation({
+          name: fallback.recommended_route,
+          transportType: fallback.transport_type,
+          travelTime: `${fallback.estimated_travel_time} mins`,
+          carbonSaved: `${fallback.carbon_saved_kg} kg CO₂`,
+          confidence: '94%',
+          reason: fallback.reason,
+        });
+      })
+      .finally(() => setLoading(false));
+  }, [isRushing, smartOpen]);
+
+  const getMapsUrl = () => {
+    const origin = encodeURIComponent('Subang Jaya');
+    const dest = encodeURIComponent('KL Sentral');
+    const mode = isRushing ? 'driving' : 'transit';
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`;
+  };
+
+  const handleConfirm = () => {
+    window.open(getMapsUrl(), '_blank');
+  };
+
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(getMapsUrl());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -121,41 +165,65 @@ export default function Navbar({ title, subtitle, variant = 'employee', onMenuCl
                       </button>
                     </div>
 
-                    <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/25">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wide text-secondary">
-                            Recommended Route
-                          </p>
-                          <h3 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">
-                            {recommendation.recommended_route}
-                          </h3>
+                    {loading ? (
+                      <div className="flex h-32 items-center justify-center">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"></div>
+                      </div>
+                    ) : recommendation && (
+                      <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/25">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide text-secondary">
+                              Recommended Route
+                            </p>
+                            <h3 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">
+                              {recommendation.name}
+                            </h3>
+                          </div>
+                          <Route className="text-secondary" size={24} />
                         </div>
-                        <Route className="text-secondary" size={24} />
-                      </div>
 
-                      <div className="mt-4 grid grid-cols-3 gap-2">
-                        <MiniMetric
-                          icon={Clock}
-                          label="ETA"
-                          value={`${recommendation.estimated_travel_time}m`}
-                        />
-                        <MiniMetric
-                          icon={Leaf}
-                          label="CO₂"
-                          value={`${recommendation.carbon_saved_kg}kg`}
-                        />
-                        <MiniMetric
-                          icon={Zap}
-                          label="Score"
-                          value={recommendation.environmental_score}
-                        />
-                      </div>
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                          <MiniMetric
+                            icon={Clock}
+                            label="Duration"
+                            value={recommendation.travelTime}
+                          />
+                          <MiniMetric
+                            icon={Leaf}
+                            label="CO₂ Saved"
+                            value={recommendation.carbonSaved}
+                          />
+                          <MiniMetric
+                            icon={Zap}
+                            label="Confidence"
+                            value={recommendation.confidence}
+                          />
+                        </div>
 
-                      <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                        {recommendation.reason}
-                      </p>
-                    </div>
+                        {recommendation.reason && (
+                          <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                            {recommendation.reason}
+                          </p>
+                        )}
+
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={handleConfirm}
+                            className="flex-1 rounded-xl bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-center text-sm font-black text-white shadow transition hover:opacity-90 active:scale-98"
+                          >
+                            Confirm & Navigate
+                          </button>
+                          <button
+                            onClick={handleCopyUrl}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                            title="Copy Maps URL"
+                          >
+                            {copied ? 'Copied!' : 'Copy URL'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -1,9 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export function useRoutes() {
+export function useRoutes(preference = 'eco') {
   const recommended = useQuery({
-    queryKey: ['routes', 'recommend'],
+    queryKey: ['routes', 'recommend', preference],
     queryFn: api.getRecommendedRoute,
     retry: 2,
   });

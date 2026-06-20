@@ -24,9 +24,8 @@ func main() {
 	bridgemiddleware.Apply(r)
 	r.Use(chiMiddleware.Timeout(15 * time.Second))
 
-	// CORS Configuration for TanStack frontend
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"}, // Restrict to frontend in prod
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000"}, // Restrict to frontend in prod
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,

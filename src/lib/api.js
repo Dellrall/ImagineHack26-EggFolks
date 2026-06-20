@@ -38,27 +38,35 @@ const getDeductedPoints = () => {
 };
 
 export const api = {
-  getRecommendedRoute: () => {
-    const recommendation = recommendTransportationRoute({
-      start_location: 'Subang Jaya',
-      destination: 'KL Sentral',
-      departure_time: '08:00',
-      expected_arrival: '09:00',
-      is_rushing: false,
-    });
+  getRecommendedRoute: async ({ queryKey }) => {
+    const preference = queryKey[2] || 'eco';
+    try {
+      const response = await fetch(`http://localhost:8080/api/v1/routes/recommend?preference=${preference}&origin=Subang+Jaya&destination=KL+Sentral`);
+      if (!response.ok) throw new Error();
+      const res = await response.json();
+      return res.data;
+    } catch (e) {
+      const recommendation = recommendTransportationRoute({
+        start_location: 'Subang Jaya',
+        destination: 'KL Sentral',
+        departure_time: '08:00',
+        expected_arrival: '09:00',
+        is_rushing: preference === 'speed',
+      });
 
-    return wait({
-      name: recommendation.recommended_route,
-      transportType: recommendation.transport_type,
-      travelTime: `${recommendation.estimated_travel_time} mins`,
-      carbonSaved: `${recommendation.carbon_saved_kg} kg CO₂`,
-      carbonSavedTodayKg: recommendation.carbon_saved_kg,
-      confidence: '94%',
-      reason: recommendation.reason,
-      environmentalScore: recommendation.environmental_score,
-      alternatives: recommendation.alternatives,
-      raw: recommendation,
-    });
+      return {
+        name: recommendation.recommended_route,
+        transportType: recommendation.transport_type,
+        travelTime: `${recommendation.estimated_travel_time} mins`,
+        carbonSaved: `${recommendation.carbon_saved_kg} kg CO₂`,
+        carbonSavedTodayKg: recommendation.carbon_saved_kg,
+        confidence: '94%',
+        reason: recommendation.reason,
+        environmentalScore: recommendation.environmental_score,
+        alternatives: recommendation.alternatives,
+        raw: recommendation,
+      };
+    }
   },
   postRouteFeedback: (feedback) => wait({ ok: true, feedback }),
   getMySchedule: () => {
