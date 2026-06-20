@@ -22,6 +22,25 @@ const statusMap = {
 export default function TodayScheduleStatusCard({ schedule }) {
   const status = statusMap[schedule.today] ?? statusMap.Office;
   const Icon = status.icon;
+  const isWfh = schedule.today === 'WFH';
+  const isHybrid = schedule.today === 'Hybrid';
+  const details = isWfh
+    ? [
+        { label: 'Online Start', value: schedule.onlineStartTime },
+        { label: 'Work Hours', value: schedule.wfhHours },
+        { label: 'Commute', value: 'Not required' },
+      ]
+    : isHybrid
+      ? [
+          { label: 'Office Hours', value: schedule.officeHours },
+          { label: 'WFH Hours', value: schedule.wfhHours },
+          { label: 'Route', value: schedule.recommendedRoute },
+        ]
+      : [
+          { label: 'Arrival', value: schedule.arrivalTime },
+          { label: 'Leave Home', value: schedule.suggestedDepartureTime },
+          { label: 'Route', value: schedule.recommendedRoute },
+        ];
 
   return (
     <motion.section
@@ -45,10 +64,16 @@ export default function TodayScheduleStatusCard({ schedule }) {
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <Info label="Arrival" value={schedule.arrivalTime} />
-        <Info label="Leave Home" value={schedule.suggestedDepartureTime} />
-        <Info label="Route" value={schedule.recommendedRoute} />
+        {details.map((item) => (
+          <Info key={item.label} label={item.label} value={item.value} />
+        ))}
       </div>
+
+      {isWfh && (
+        <p className="mt-4 rounded-2xl bg-sky-50 p-4 text-sm font-bold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">
+          No transport route is needed today because your schedule is fully remote.
+        </p>
+      )}
     </motion.section>
   );
 }
@@ -57,7 +82,7 @@ function Info({ label, value }) {
   return (
     <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
       <p className="text-sm font-bold text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-black text-slate-950 dark:text-white">{value}</p>
+      <p className="mt-1 text-xl font-black text-slate-950 dark:text-white">{value ?? '-'}</p>
     </div>
   );
 }
