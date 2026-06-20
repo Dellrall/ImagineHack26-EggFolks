@@ -1,15 +1,16 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"eco-route/routes"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
+
 	r := gin.Default()
 
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Eco Route Backend Running",
-		})
-	})
+	routes.SetupRoutes(r)
 
 	r.Run(":3000")
 }
