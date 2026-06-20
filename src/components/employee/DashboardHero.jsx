@@ -5,6 +5,14 @@ import { getCurrentUser } from '../../lib/auth';
 export default function DashboardHero({ carbonToday, pointsToday }) {
   const user = getCurrentUser();
 
+  const greeting = (() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Good Morning';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon';
+    if (hour >= 17 && hour < 21) return 'Good Evening';
+    return 'Good Night';
+  })();
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 18 }}
@@ -15,7 +23,7 @@ export default function DashboardHero({ carbonToday, pointsToday }) {
       <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
         <div>
           <h2 className="mt-3 text-3xl font-black md:text-5xl">
-            Good Morning, {user.name.split(' ')[0]} 👋
+            {greeting}, {user.name.split(' ')[0]} 👋
           </h2>
           <p className="mt-4 max-w-2xl text-base font-medium text-emerald-50 md:text-lg">
             Every eco-friendly commute helps grow a greener future.
