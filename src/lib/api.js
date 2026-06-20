@@ -3,13 +3,14 @@ import {
   carbonStats,
   employeeProfile,
   points,
-  recommendedRoute,
   routeHistory,
-  schedule,
   satisfactionStats,
   tardinessStats,
 } from '../data/employeeData';
 import { perks } from '../data/perksData';
+import { calculateEcoPoints } from './ecoPointsEngine';
+import { createSmartSchedule } from './smartScheduler';
+import { recommendTransportationRoute } from './transportationRouter';
 
 const wait = (payload, ms = 250) =>
   new Promise((resolve) => {
@@ -17,10 +18,96 @@ const wait = (payload, ms = 250) =>
   });
 
 export const api = {
-  getRecommendedRoute: () => wait(recommendedRoute),
+  getRecommendedRoute: () => {
+    const recommendation = recommendTransportationRoute({
+      start_location: 'Subang Jaya',
+      destination: 'KL Sentral',
+      departure_time: '08:00',
+      expected_arrival: '09:00',
+      is_rushing: false,
+    });
+
+    return wait({
+      name: recommendation.recommended_route,
+      transportType: recommendation.transport_type,
+      travelTime: `${recommendation.estimated_travel_time} mins`,
+      carbonSaved: `${recommendation.carbon_saved_kg} kg CO₂`,
+      carbonSavedTodayKg: recommendation.carbon_saved_kg,
+      confidence: '94%',
+      reason: recommendation.reason,
+      environmentalScore: recommendation.environmental_score,
+      alternatives: recommendation.alternatives,
+      raw: recommendation,
+    });
+  },
   postRouteFeedback: (feedback) => wait({ ok: true, feedback }),
-  getMySchedule: () => wait(schedule),
-  getMyPoints: () => wait(points),
+  getMySchedule: () => {
+    const route = recommendTransportationRoute({
+      start_location: 'Subang Jaya',
+      destination: 'KL Sentral',
+      departure_time: '08:00',
+      expected_arrival: '09:00',
+      is_rushing: false,
+    });
+    const smartSchedule = createSmartSchedule({
+      day: 'Monday',
+      workMode: 'Office',
+      officeStart: '09:00',
+      officeEnd: '17:00',
+      wfhStart: '13:00',
+      wfhEnd: '17:00',
+      transportPrediction: route,
+    });
+
+    const isWfh = smartSchedule.work_mode === 'WFH';
+    const isHybrid = smartSchedule.work_mode === 'Hybrid';
+
+    return wait({
+      today: smartSchedule.work_mode,
+      status: smartSchedule.work_mode,
+      arrivalTime: isWfh ? null : smartSchedule.predicted_arrival ?? '08:45',
+      suggestedDepartureTime: isWfh ? null : '08:05',
+      onlineStartTime: isWfh ? smartSchedule.wfh_hours?.split('-')[0] ?? '09:00' : null,
+      location: isWfh ? 'Remote' : 'HQ Floor 2',
+      recommendedRoute: isWfh ? null : route.recommended_route,
+      officeHours: smartSchedule.office_hours,
+      wfhHours: smartSchedule.wfh_hours,
+      recommendation: smartSchedule.recommendation,
+      approvalStatus: smartSchedule.status,
+      week: [
+        { day: 'Mon', mode: smartSchedule.work_mode },
+        { day: 'Tue', mode: 'WFH' },
+        { day: 'Wed', mode: 'Office' },
+        { day: 'Thu', mode: 'WFH' },
+        { day: 'Fri', mode: isHybrid ? 'Hybrid' : 'Office' },
+      ],
+      raw: smartSchedule,
+    });
+  },
+  getMyPoints: () => {
+    const engineResult = calculateEcoPoints({
+      transportationMethod: 'MRT',
+      carbonSaved: 2.5,
+      travelDistance: 14,
+      employeeHistory: {
+        currentBalance: 1330,
+        consecutiveEcoTrips: 7,
+        monthlyGoalAchieved: false,
+      },
+    });
+
+    return wait({
+      ...points,
+      balance: engineResult.current_balance,
+      nearestReward: {
+        ...points.nearestReward,
+        title: engineResult.next_reward,
+      },
+      pointsEarnedToday: engineResult.points_earned,
+      pointsNeeded: engineResult.points_needed,
+      validation: engineResult.validation,
+    });
+  },
   getMyAllowance: () => wait(allowance),
   getCarbonStats: () => wait(carbonStats),
   getTardinessStats: () => wait(tardinessStats),
